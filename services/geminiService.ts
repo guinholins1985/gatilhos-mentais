@@ -3,24 +3,19 @@ import type { FormState } from '../types';
 import { MENTAL_TRIGGERS } from '../constants';
 
 /**
- * Obtém a API Key do ambiente e lança um erro claro se não estiver definida.
- * Isso é crucial para o diagnóstico de problemas no deploy da Vercel.
- * @returns A API Key.
- * @throws {Error} Se a API_KEY não estiver nas variáveis de ambiente.
+ * Analisa uma imagem de produto usando a API Gemini para extrair informações.
+ * @param image - O objeto da imagem contendo base64 e mimeType.
+ * @param apiKey - A chave de API do Google AI Studio fornecida pelo usuário.
+ * @returns Uma promessa que resolve para um objeto com produto, público e benefício.
  */
-const getApiKey = (): string => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("API_KEY não encontrada. Por favor, adicione a variável de ambiente API_KEY nas configurações do seu projeto na Vercel para que a aplicação possa funcionar corretamente.");
-  }
-  return apiKey;
-};
-
-
 export const analyzeImageWithGemini = async (
-  image: { base64: string; mimeType: string; }
+  image: { base64: string; mimeType: string; },
+  apiKey: string
 ): Promise<{ product: string; audience: string; benefit: string; }> => {
-  const apiKey = getApiKey();
+  // Valida se a chave de API foi fornecida antes de continuar.
+  if (!apiKey) {
+    throw new Error("A chave de API do Gemini não foi fornecida.");
+  }
   const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `
@@ -74,19 +69,28 @@ export const analyzeImageWithGemini = async (
   } catch (error) {
     console.error("Error analyzing image with Gemini API:", error);
     if (error instanceof Error) {
-        // Propaga a mensagem de erro específica (ex: chave faltando)
         throw error;
     }
-    throw new Error("Failed to analyze image with Gemini API.");
+    throw new Error("Falha ao analisar imagem. Verifique sua chave de API e tente novamente.");
   }
 };
 
-
+/**
+ * Gera textos de copywriting com base nas informações do formulário e gatilhos mentais.
+ * @param formState - O estado atual do formulário.
+ * @param selectedTriggers - Uma lista dos gatilhos mentais selecionados.
+ * @param apiKey - A chave de API do Google AI Studio fornecida pelo usuário.
+ * @returns Uma promessa que resolve para um record onde a chave é o gatilho e o valor é a copy gerada.
+ */
 export const generateCopywritingTriggers = async (
   formState: FormState,
-  selectedTriggers: string[]
+  selectedTriggers: string[],
+  apiKey: string
 ): Promise<Record<string, string>> => {
-  const apiKey = getApiKey();
+  // Valida se a chave de API foi fornecida antes de continuar.
+  if (!apiKey) {
+    throw new Error("A chave de API do Gemini não foi fornecida.");
+  }
   const ai = new GoogleGenAI({ apiKey });
   const { product, audience, benefit, cta, image } = formState;
 
@@ -151,9 +155,8 @@ export const generateCopywritingTriggers = async (
   } catch (error) {
     console.error("Error calling Gemini API:", error);
     if (error instanceof Error) {
-        // Propaga a mensagem de erro específica (ex: chave faltando)
         throw error;
     }
-    throw new Error("Failed to generate copywriting from Gemini API.");
+    throw new Error("Falha ao gerar a copy. Verifique sua chave de API e tente novamente.");
   }
 };
