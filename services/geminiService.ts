@@ -2,11 +2,10 @@ import { GoogleGenAI, Type, Content } from "@google/genai";
 import type { FormState } from '../types';
 import { MENTAL_TRIGGERS } from '../constants';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-
 export const analyzeImageWithGemini = async (
   image: { base64: string; mimeType: string; }
 ): Promise<{ product: string; audience: string; benefit: string; }> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
   const prompt = `
     Analise a imagem deste produto e identifique:
@@ -67,6 +66,7 @@ export const generateCopywritingTriggers = async (
   formState: FormState,
   selectedTriggers: string[]
 ): Promise<Record<string, string>> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
   const { product, audience, benefit, cta, image } = formState;
 
   const triggerDetails = selectedTriggers.map(key => {
