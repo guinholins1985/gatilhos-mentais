@@ -8,6 +8,7 @@ interface InputFieldProps {
   placeholder: string;
   isTextArea?: boolean;
   optional?: boolean;
+  disabled?: boolean;
 }
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -18,14 +19,16 @@ const InputField: React.FC<InputFieldProps> = ({
   placeholder,
   isTextArea = false,
   optional = false,
+  disabled = false,
 }) => {
   const commonProps = {
     name,
     value,
     onChange,
     placeholder,
+    disabled,
     className:
-      'w-full bg-slate-900 border border-slate-600 rounded-md py-2 px-3 text-gray-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200',
+      'w-full bg-slate-900 border border-slate-600 rounded-md py-2 px-3 text-gray-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 disabled:bg-slate-800 disabled:cursor-not-allowed',
   };
 
   return (

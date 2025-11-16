@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import type { FormState, GeneratedCopy } from './types';
 import { MENTAL_TRIGGERS } from './constants';
-import { generateCopywritingTriggers } from './services/geminiService';
+import { generateCopywritingTriggers, analyzeImageWithGemini } from './services/geminiService';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import InputField from './components/InputField';
@@ -23,6 +23,7 @@ const App: React.FC = () => {
   const [selectedTriggers, setSelectedTriggers] = useState<string[]>([]);
   const [generatedCopy, setGeneratedCopy] = useState<GeneratedCopy[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (
@@ -54,6 +55,32 @@ const App: React.FC = () => {
     setImagePreviewUrl(null);
     setFormState(prevState => ({ ...prevState, image: undefined }));
   };
+  
+  const handleImageAnalysis = useCallback(async () => {
+    if (!formState.image) {
+        setError('Por favor, adicione uma imagem primeiro.');
+        return;
+    }
+
+    setIsAnalyzingImage(true);
+    setError(null);
+
+    try {
+        const analysisResult = await analyzeImageWithGemini(formState.image);
+        setFormState(prevState => ({
+            ...prevState,
+            product: analysisResult.product,
+            audience: analysisResult.audience,
+            benefit: analysisResult.benefit,
+        }));
+    } catch (e) {
+        console.error(e);
+        setError('Não foi possível analisar a imagem. Tente novamente.');
+    } finally {
+        setIsAnalyzingImage(false);
+    }
+  }, [formState.image]);
+
 
   const toggleTrigger = (triggerKey: string) => {
     setSelectedTriggers((prev) =>
@@ -113,6 +140,7 @@ const App: React.FC = () => {
                 value={formState.product}
                 onChange={handleInputChange}
                 placeholder="Ex: Curso de React Avançado"
+                disabled={isAnalyzingImage}
               />
               <InputField
                 label="Público-Alvo"
@@ -120,13 +148,35 @@ const App: React.FC = () => {
                 value={formState.audience}
                 onChange={handleInputChange}
                 placeholder="Ex: Desenvolvedores júnior"
+                disabled={isAnalyzingImage}
               />
               <div className="md:col-span-2">
-                <ImageUploader 
+                 <ImageUploader 
                   onImageChange={handleImageChange}
                   onImageRemove={handleImageRemove}
                   previewUrl={imagePreviewUrl}
                 />
+                 {imagePreviewUrl && (
+                    <div className="text-center mt-4">
+                        <button
+                            onClick={handleImageAnalysis}
+                            disabled={isAnalyzingImage || isLoading}
+                            className="inline-flex items-center justify-center px-6 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold rounded-full shadow-md transition-all duration-300 ease-in-out hover:from-teal-600 hover:to-cyan-600 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
+                        >
+                            {isAnalyzingImage ? (
+                                <>
+                                    <LoaderIcon />
+                                    Analisando...
+                                </>
+                            ) : (
+                                <>
+                                    <SparklesIcon />
+                                    Preencher com IA
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )}
               </div>
               <div className="md:col-span-2">
                 <InputField
@@ -136,6 +186,7 @@ const App: React.FC = () => {
                   onChange={handleInputChange}
                   placeholder="Ex: Conseguir um emprego sênior em 6 meses"
                   isTextArea
+                  disabled={isAnalyzingImage}
                 />
               </div>
               <div className="md:col-span-2">
@@ -163,7 +214,7 @@ const App: React.FC = () => {
             <div className="text-center mt-10">
               <button
                 onClick={handleSubmit}
-                disabled={!isFormValid || isLoading}
+                disabled={!isFormValid || isLoading || isAnalyzingImage}
                 className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-lg rounded-full shadow-lg transition-all duration-300 ease-in-out hover:from-blue-700 hover:to-purple-700 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
               >
                 {isLoading ? (

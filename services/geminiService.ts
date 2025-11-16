@@ -4,6 +4,65 @@ import { MENTAL_TRIGGERS } from '../constants';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
+export const analyzeImageWithGemini = async (
+  image: { base64: string; mimeType: string; }
+): Promise<{ product: string; audience: string; benefit: string; }> => {
+
+  const prompt = `
+    Analise a imagem deste produto e identifique:
+    1.  **Nome do Produto/Serviço:** Um nome descritivo ou o nome exato se for visível.
+    2.  **Público-Alvo:** O perfil de cliente ideal para este produto.
+    3.  **Principal Benefício:** A principal vantagem ou transformação que o produto oferece.
+
+    Seja conciso e direto. Retorne a resposta estritamente como um objeto JSON.
+  `;
+
+  const responseSchema = {
+    type: Type.OBJECT,
+    properties: {
+      product: {
+        type: Type.STRING,
+        description: 'O nome do produto ou serviço identificado na imagem.'
+      },
+      audience: {
+        type: Type.STRING,
+        description: 'O público-alvo ideal para este produto.'
+      },
+      benefit: {
+        type: Type.STRING,
+        description: 'O principal benefício ou transformação que o produto oferece.'
+      }
+    },
+    required: ['product', 'audience', 'benefit']
+  };
+
+  const contents: Content = {
+    parts: [
+      { text: prompt },
+      { inlineData: { mimeType: image.mimeType, data: image.base64 } }
+    ]
+  };
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: responseSchema,
+        temperature: 0.5,
+      },
+    });
+
+    const jsonText = response.text.trim();
+    return JSON.parse(jsonText);
+  } catch (error) {
+    console.error("Error analyzing image with Gemini API:", error);
+    throw new Error("Failed to analyze image with Gemini API.");
+  }
+};
+
+
 export const generateCopywritingTriggers = async (
   formState: FormState,
   selectedTriggers: string[]
