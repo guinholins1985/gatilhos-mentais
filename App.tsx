@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import type { FormState, GeneratedCopy } from './types';
 import { MENTAL_TRIGGERS } from './constants';
 import { generateCopywritingTriggers, analyzeImageWithGemini } from './services/geminiService';
@@ -25,6 +25,18 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isAnalyzingImage, setIsAnalyzingImage] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [configError, setConfigError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Verifica a API Key na montagem do componente.
+    // Isso fornece feedback imediato ao desenvolvedor se a Vercel não estiver configurada.
+    if (!process.env.API_KEY) {
+      setConfigError(
+        'Atenção: A API_KEY não está configurada. Para que o aplicativo funcione, você precisa adicionar a variável de ambiente API_KEY nas configurações do seu projeto na Vercel.'
+      );
+    }
+  }, []);
+
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -75,7 +87,8 @@ const App: React.FC = () => {
         }));
     } catch (e) {
         console.error(e);
-        setError('Não foi possível analisar a imagem. Tente novamente.');
+        const errorMessage = e instanceof Error ? e.message : 'Não foi possível analisar a imagem. Tente novamente.';
+        setError(errorMessage);
     } finally {
         setIsAnalyzingImage(false);
     }
@@ -117,7 +130,8 @@ const App: React.FC = () => {
 
     } catch (e) {
       console.error(e);
-      setError('Ocorreu um erro ao gerar a copy. Por favor, tente novamente.');
+      const errorMessage = e instanceof Error ? e.message : 'Ocorreu um erro ao gerar a copy. Por favor, tente novamente.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -128,6 +142,12 @@ const App: React.FC = () => {
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
+          {configError && (
+            <div className="mb-8 bg-yellow-900/50 border border-yellow-700 text-yellow-200 px-4 py-3 rounded-lg text-center">
+              <p className="font-bold">Ação Necessária</p>
+              <p className="text-sm">{configError}</p>
+            </div>
+           )}
           <div className="bg-slate-800/50 rounded-2xl p-6 md:p-8 shadow-2xl border border-slate-700">
             <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
               Informações do Produto/Serviço

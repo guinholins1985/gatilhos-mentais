@@ -2,10 +2,26 @@ import { GoogleGenAI, Type, Content } from "@google/genai";
 import type { FormState } from '../types';
 import { MENTAL_TRIGGERS } from '../constants';
 
+/**
+ * Obtém a API Key do ambiente e lança um erro claro se não estiver definida.
+ * Isso é crucial para o diagnóstico de problemas no deploy da Vercel.
+ * @returns A API Key.
+ * @throws {Error} Se a API_KEY não estiver nas variáveis de ambiente.
+ */
+const getApiKey = (): string => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API_KEY não encontrada. Por favor, adicione a variável de ambiente API_KEY nas configurações do seu projeto na Vercel para que a aplicação possa funcionar corretamente.");
+  }
+  return apiKey;
+};
+
+
 export const analyzeImageWithGemini = async (
   image: { base64: string; mimeType: string; }
 ): Promise<{ product: string; audience: string; benefit: string; }> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+  const apiKey = getApiKey();
+  const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `
     Analise a imagem deste produto e identifique:
@@ -57,6 +73,10 @@ export const analyzeImageWithGemini = async (
     return JSON.parse(jsonText);
   } catch (error) {
     console.error("Error analyzing image with Gemini API:", error);
+    if (error instanceof Error) {
+        // Propaga a mensagem de erro específica (ex: chave faltando)
+        throw error;
+    }
     throw new Error("Failed to analyze image with Gemini API.");
   }
 };
@@ -66,7 +86,8 @@ export const generateCopywritingTriggers = async (
   formState: FormState,
   selectedTriggers: string[]
 ): Promise<Record<string, string>> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+  const apiKey = getApiKey();
+  const ai = new GoogleGenAI({ apiKey });
   const { product, audience, benefit, cta, image } = formState;
 
   const triggerDetails = selectedTriggers.map(key => {
@@ -129,6 +150,10 @@ export const generateCopywritingTriggers = async (
     
   } catch (error) {
     console.error("Error calling Gemini API:", error);
+    if (error instanceof Error) {
+        // Propaga a mensagem de erro específica (ex: chave faltando)
+        throw error;
+    }
     throw new Error("Failed to generate copywriting from Gemini API.");
   }
 };
