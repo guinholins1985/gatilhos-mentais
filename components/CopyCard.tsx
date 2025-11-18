@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import { ClipboardIcon } from './icons/ClipboardIcon';
+import { CheckIcon } from './icons/CheckIcon';
 
 interface CopyCardProps {
   triggerName: string;
@@ -24,9 +24,14 @@ const CopyCard: React.FC<CopyCardProps> = ({ triggerName, copyText }) => {
         </h3>
         <button 
             onClick={handleCopy}
-            className="absolute top-4 right-4 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold py-2 px-3 rounded-lg flex items-center transition-colors duration-200"
+            className={`absolute top-4 right-4 font-bold py-2 px-3 rounded-lg flex items-center transition-colors duration-200 ${
+                copied 
+                ? 'bg-green-600 text-white' 
+                : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+            }`}
+            disabled={copied}
         >
-            <ClipboardIcon />
+            {copied ? <CheckIcon /> : <ClipboardIcon />}
             <span className="ml-2 text-sm">{copied ? 'Copiado!' : 'Copiar'}</span>
         </button>
       </div>

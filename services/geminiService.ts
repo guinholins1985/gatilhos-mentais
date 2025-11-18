@@ -2,21 +2,18 @@ import { GoogleGenAI, Type, Content } from "@google/genai";
 import type { FormState } from '../types';
 import { MENTAL_TRIGGERS } from '../constants';
 
+// A instância do GoogleGenAI é criada usando a API Key do ambiente.
+// Isso evita a necessidade de passar a chave como parâmetro em todas as chamadas.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+
 /**
  * Analisa uma imagem de produto usando a API Gemini para extrair informações.
  * @param image - O objeto da imagem contendo base64 e mimeType.
- * @param apiKey - A chave de API do Google AI Studio fornecida pelo usuário.
  * @returns Uma promessa que resolve para um objeto com produto, público e benefício.
  */
 export const analyzeImageWithGemini = async (
-  image: { base64: string; mimeType: string; },
-  apiKey: string
+  image: { base64: string; mimeType: string; }
 ): Promise<{ product: string; audience: string; benefit: string; }> => {
-  // Valida se a chave de API foi fornecida antes de continuar.
-  if (!apiKey) {
-    throw new Error("A chave de API do Gemini não foi fornecida.");
-  }
-  const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `
     Analise a imagem deste produto e identifique:
@@ -68,10 +65,7 @@ export const analyzeImageWithGemini = async (
     return JSON.parse(jsonText);
   } catch (error) {
     console.error("Error analyzing image with Gemini API:", error);
-    if (error instanceof Error) {
-        throw error;
-    }
-    throw new Error("Falha ao analisar imagem. Verifique sua chave de API e tente novamente.");
+    throw new Error("Falha ao analisar a imagem. A API pode estar indisponível ou a imagem pode ser inválida.");
   }
 };
 
@@ -79,19 +73,12 @@ export const analyzeImageWithGemini = async (
  * Gera textos de copywriting com base nas informações do formulário e gatilhos mentais.
  * @param formState - O estado atual do formulário.
  * @param selectedTriggers - Uma lista dos gatilhos mentais selecionados.
- * @param apiKey - A chave de API do Google AI Studio fornecida pelo usuário.
  * @returns Uma promessa que resolve para um record onde a chave é o gatilho e o valor é a copy gerada.
  */
 export const generateCopywritingTriggers = async (
   formState: FormState,
-  selectedTriggers: string[],
-  apiKey: string
+  selectedTriggers: string[]
 ): Promise<Record<string, string>> => {
-  // Valida se a chave de API foi fornecida antes de continuar.
-  if (!apiKey) {
-    throw new Error("A chave de API do Gemini não foi fornecida.");
-  }
-  const ai = new GoogleGenAI({ apiKey });
   const { product, audience, benefit, cta, image } = formState;
 
   const triggerDetails = selectedTriggers.map(key => {
@@ -154,9 +141,6 @@ export const generateCopywritingTriggers = async (
     
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    if (error instanceof Error) {
-        throw error;
-    }
-    throw new Error("Falha ao gerar a copy. Verifique sua chave de API e tente novamente.");
+    throw new Error("Falha ao gerar a copy. A API pode estar indisponível ou a requisição é inválida.");
   }
 };
